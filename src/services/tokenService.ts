@@ -10,9 +10,15 @@ export const generateToken = (data: any) => {
   return { accessToken, refreshToken }
 }
 
-export const renewToken = (data: any) => {
-  const accessToken = jwt.sign(data, process.env.JWT_ACCESS_SECRET as string, { expiresIn: "15h" })
-  return accessToken
+export const renewToken = (refreshToken: any) => {
+  try {
+    const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as JwtPayload
+    const { id } = decodedRefreshToken
+    const accessToken = jwt.sign({id}, process.env.JWT_ACCESS_SECRET as string, { expiresIn: "15h" })
+    return accessToken
+  } catch(err) {
+    return err
+  }
 }
 
 export const decodeToken = async(accessToken: string, refreshToken: string) => {

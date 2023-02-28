@@ -12,7 +12,7 @@ import * as dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid';
 
 import { getMachine } from './services/machineService'
-import { generateToken, decodeToken } from './services/tokenService'
+import { generateToken, decodeToken, renewToken } from './services/tokenService'
 import { retrieveMachineSession } from './services/sessionService'
 
 dotenv.config()
@@ -32,11 +32,24 @@ server
     })
   })
 
+  // refresh will regenerate
   server.addHook('onRequest', (req, reply, done) => {
-    const id = uuidv4()
-    const { accessToken, refreshToken } = generateToken({id});
-    req.requestContext.set('user', accessToken);
-    reply.setCookie('flyRefreshToken', refreshToken, {})
+    const { flyToken } = req.cookies
+    if (flyToken != undefined) {
+      const accessToken = renewToken(flyToken)
+      req.requestContext.set('user', accessToken);
+    } else {
+      const id = uuidv4()
+      const { accessToken, refreshToken } = generateToken({id});
+      req.requestContext.set('user', accessToken);
+      reply.setCookie('flyRefreshToken', refreshToken, {
+        // domain: 'your.domain',
+        path: '/',
+        secure: true,
+        httpOnly: true,
+        sameSite: true
+      })
+    }
     done();
   });
 
@@ -49,8 +62,7 @@ const pingHandler: RouteHandlerMethod<
 > = async (req, reply) => {
   const { flyRefreshToken } = req.cookies;
   const accessToken = req.requestContext.get('user');
- 
-  // // get a machine
+  // get a machine
   try {
     let decodedToken: any
     decodedToken = await decodeToken(accessToken, flyRefreshToken as string)
