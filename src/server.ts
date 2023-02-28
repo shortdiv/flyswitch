@@ -1,63 +1,71 @@
-import fastify from 'fastify'
+import fastify, {
+  RouteHandlerMethod,
+	RequestGenericInterface,
+	RawServerDefault,
+	RawRequestDefaultExpression,
+	RawReplyDefaultExpression
+} from 'fastify'
 import fastifyCookie from '@fastify/cookie'
-// import env from '@fastify/env'
+import fastifyRequestContextPlugin from '@fastify/request-context'
+import fastifySensible from '@fastify/sensible'
 import * as dotenv from 'dotenv'
 import { v4 as uuidv4 } from 'uuid';
 
-dotenv.config()
-
 import { getMachine } from './services/machineService'
 import { generateToken, decodeToken } from './services/tokenService'
+import { retrieveMachineSession } from './services/sessionService'
 
-const options = {
-  dotenv: true
+dotenv.config()
+
+interface Request extends RequestGenericInterface {
+	Querystring: { msg?: string }
 }
 
 const server = fastify()
 
 server
   .register(fastifyCookie)
-  // .register(env, options)
+  .register(fastifySensible)
+  .register(fastifyRequestContextPlugin, {
+    defaultStoreValues: () => ({
+      user: { id: 'system' }
+    })
+  })
 
-
-server.get('/ping', async (request, reply) => {
-  return 'pong\n'
-})
-
-server.get('/', async (req, reply) => {
-  const { flyToken } = req.cookies;
-  let token = flyToken || ""
-  if (token == "") {
+  server.addHook('onRequest', (req, reply, done) => {
     const id = uuidv4()
-    token = generateToken({id});
-    reply
-      .setCookie('flyToken', token,
-      {
-      //   path: '/',
-      //   sameSite: "none",
-      //   secure: true,
-      //   httpOnly: true,
-        // expires: new Date("2021-01-01")
-      }
-      )
-    console.log("no cookie, setting")
-  }
+    const { accessToken, refreshToken } = generateToken({id});
+    req.requestContext.set('user', accessToken);
+    reply.setCookie('flyRefreshToken', refreshToken, {})
+    done();
+  });
+
+// Handlers
+const pingHandler: RouteHandlerMethod<
+	RawServerDefault,
+	RawRequestDefaultExpression<RawServerDefault>,
+	RawReplyDefaultExpression<RawServerDefault>,
+	Request
+> = async (req, reply) => {
+  const { flyRefreshToken } = req.cookies;
+  const accessToken = req.requestContext.get('user');
  
-  // get a machine
+  // // get a machine
   try {
-    const t = await decodeToken(token)
-    const machine = await getMachine(t.id)
-    console.log(machine)
-
+    let decodedToken: any
+    decodedToken = await decodeToken(accessToken, flyRefreshToken as string)
+    const {id} = decodedToken
+    const machineID = await retrieveMachineSession(id as string)
+    const machine = await getMachine(machineID.id)
+    reply
+      .send({ machine })
   } catch(err) {
-    console.log("is there an err", err)
+    reply
+      .internalServerError()
   }
+}
 
-  console.log("cookie set")
-
-  reply
-    .send({ hello: 'world' })
-})
+server.get('/', pingHandler)
 
 server.listen({ port: 8080, host: '0.0.0.0' }, (err, address) => {
   if (err) {

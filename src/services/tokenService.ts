@@ -1,5 +1,3 @@
-import fs from "fs"
-import path from "path"
 import jwt from "jsonwebtoken"
 
 interface JwtPayload {
@@ -7,18 +5,32 @@ interface JwtPayload {
 }
 
 export const generateToken = (data: any) => {
-  return jwt.sign(data, process.env.JWT_ACCESS_SECRET as string, { expiresIn: "15h" })
+  const accessToken = jwt.sign(data, process.env.JWT_ACCESS_SECRET as string, { expiresIn: "15h" })
+  const refreshToken = jwt.sign(data, process.env.JWT_REFRESH_SECRET as string, { expiresIn: "30d" });
+  return { accessToken, refreshToken }
 }
 
-export const decodeToken = async(token: string) => {
+export const renewToken = (data: any) => {
+  const accessToken = jwt.sign(data, process.env.JWT_ACCESS_SECRET as string, { expiresIn: "15h" })
+  return accessToken
+}
+
+export const decodeToken = async(accessToken: string, refreshToken: string) => {
+  let decodedAccessToken
   try {
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as JwtPayload;
-    var { id } = decoded
-    const data = await fs.promises.readFile("./src/data/machines.json", "utf8")
-    const jsonified = JSON.parse(data)
-    return jsonified[id]
+    decodedAccessToken = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET as string) as JwtPayload;
+    return decodedAccessToken
   } catch(err) {
-    console.log("this is an error")
+    if(err instanceof jwt.TokenExpiredError) {
+      // verify refresh token
+      const { id } = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET as string, {ignoreExpiration: true} ) as JwtPayload;
+      const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as JwtPayload;
+      if (decodedRefreshToken.id === id) {
+        return renewToken(id)
+      } else {
+        return Error("Could not refresh expired token")
+      }
+    }
     return err
   }
 }
