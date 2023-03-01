@@ -34,9 +34,9 @@ server
 
   // refresh will regenerate
   server.addHook('onRequest', (req, reply, done) => {
-    const { flyToken } = req.cookies
-    if (flyToken != undefined) {
-      const accessToken = renewToken(flyToken)
+    const { flyRefreshToken } = req.cookies
+    if (flyRefreshToken != undefined) {
+      const accessToken = renewToken(flyRefreshToken)
       req.requestContext.set('user', accessToken);
     } else {
       const id = uuidv4()
@@ -68,12 +68,12 @@ const pingHandler: RouteHandlerMethod<
     decodedToken = await decodeToken(accessToken, flyRefreshToken as string)
     const {id} = decodedToken
     const machineID = await retrieveMachineSession(id as string)
-    const machine = await getMachine(machineID.id)
+    const machine = await getMachine(machineID)
     reply
       .send({ machine })
   } catch(err) {
     reply
-      .internalServerError()
+      .internalServerError(err as string)
   }
 }
 
