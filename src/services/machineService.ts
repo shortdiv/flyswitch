@@ -7,6 +7,29 @@ export const getMachine = async (machineID: string) => {
       'Authorization': `Bearer ${process.env.FLY_API_TOKEN}`
     }
   })
-  
   return resp.data
+}
+
+export const createMachine = async(config: any) => {
+  const resp = await axios.post(`${process.env.FLY_API_HOSTNAME}/v1/apps/${process.env.FLY_APP_NAME}/machines/`, {
+    headers: {
+      'Authorization': `Bearer ${process.env.FLY_API_TOKEN}`
+    },
+    data: config
+  })
+  return resp.data
+}
+
+export const runQuery = async(query: machineQuery) => {
+  // get rest
+  const {method, machineID, config} = query
+  console.log("running")
+  switch (method) {
+    case "GET":
+      return await getMachine(machineID)
+    case "POST":
+      return await createMachine(config)
+    default:
+      return Error("no query could be built")
+  }
 }

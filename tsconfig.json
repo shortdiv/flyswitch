@@ -1,5 +1,16 @@
 {
+  "ts-node": {
+    "files": true
+  },
+  "files": [
+    "@types/enums.ts",
+    "@types/index.d.ts"
+  ],
   "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "*" : ["@types/*.d.ts", "@types/*.ts"]
+    },
     "outDir": "build",
     /* Language and Environment */
     "target": "esnext",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
@@ -22,6 +33,6 @@
     /* Completeness */
     "skipLibCheck": true,                                 /* Skip type checking all .d.ts files. */
   },
-  "include": ["**/src/**/*.ts"],
-  "exclude": ["node_modules"],
+  "include": ["**/src/**/*.ts",  "**/*.d.ts", "**/*.ts"],
+  "exclude": ["node_modules"]
 }

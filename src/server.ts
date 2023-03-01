@@ -13,7 +13,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { getMachine } from './services/machineService'
 import { generateToken, decodeToken, renewToken } from './services/tokenService'
-import { retrieveMachineSession } from './services/sessionService'
+import { buildMachineQuery } from './services/sessionService'
+import { runQuery } from './services/machineService'
 
 dotenv.config()
 
@@ -67,8 +68,8 @@ const pingHandler: RouteHandlerMethod<
     let decodedToken: any
     decodedToken = await decodeToken(accessToken, flyRefreshToken as string)
     const {id} = decodedToken
-    const machineID = await retrieveMachineSession(id as string)
-    const machine = await getMachine(machineID)
+    const machineQuery: any = await buildMachineQuery(id as string)
+    const machine = await runQuery(machineQuery)
     reply
       .send({ machine })
   } catch(err) {

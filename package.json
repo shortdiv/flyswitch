@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
+    "watch": "nodemon",
+    "dev": "tsc-watch --onSuccess \"npm run watch\"",
     "build": "rm -rf ./build && tsc -p tsconfig.json",
     "prod": "NODE_ENV=production node --loader ts-node/esm  --experimental-specifier-resolution=node ./src/server.ts"
   },
