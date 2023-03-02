@@ -2,12 +2,12 @@
 type Rest = "GET" | "POST" | "DELETE"
 
 declare interface config {
-  name: string,
+  name?: string,
   image: string
 }
 
 declare interface machineQuery {
-  method?: Rest,
-  machineID: string,
+  method: Rest,
+  machineID?: string,
   config?: config
 }

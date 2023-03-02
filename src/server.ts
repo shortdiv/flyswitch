@@ -69,7 +69,7 @@ const pingHandler: RouteHandlerMethod<
     decodedToken = await decodeToken(accessToken, flyRefreshToken as string)
     const {id} = decodedToken
     const machineQuery: any = await buildMachineQuery(id as string)
-    const machine = await runQuery(machineQuery)
+    const machine = await runQuery(machineQuery, id)
     reply
       .send({ machine })
   } catch(err) {

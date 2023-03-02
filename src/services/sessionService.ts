@@ -10,12 +10,26 @@ export const retrieveMachineSession = async (id: string) => {
   return jsonified[id].id
 }
 
+export const writeMachineSession = async(userID: string, machine: any) => {
+  console.log("machining")
+  console.log(machine)
+  const file = fs.readFileSync("./src/data/machines.json")
+  const json = JSON.parse(file.toString())
+  json[userID] = machine
+  console.log("writing!")
+  console.log(json)
+
+  fs.promises.writeFile("./src/data/machines.json", JSON.stringify(json))
+  console.log("written")
+  return {data: "machine"}
+}
+
 export const buildMachineQuery = async(id: string) => {
   //read file service
+  let query: machineQuery
   try {
-    // let query: machineQuery
     const machineID = await retrieveMachineSession(id)
-    const query: machineQuery = {
+    query = {
       method: "GET",
       machineID
     }
@@ -23,8 +37,12 @@ export const buildMachineQuery = async(id: string) => {
     return query
     // return { method: "", machineID: "", config: {} }
   } catch(err) {
-    console.log("there was an error", err)
-    // generally machine doesn't exist
-
+    query = {
+      method: "POST",
+      config: {
+        image: "flyio/fastify-functions"
+      }
+    }
+    return query
   }
 }
