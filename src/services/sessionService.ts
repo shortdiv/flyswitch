@@ -11,13 +11,10 @@ export const retrieveMachineSession = async (id: string) => {
 }
 
 export const writeMachineSession = async(userID: string, machine: any) => {
-  console.log("machining")
-  console.log(machine)
   const file = fs.readFileSync("./src/data/machines.json")
   const json = JSON.parse(file.toString())
   json[userID] = machine
   console.log("writing!")
-  console.log(json)
 
   fs.promises.writeFile("./src/data/machines.json", JSON.stringify(json))
   console.log("written")
@@ -33,7 +30,6 @@ export const buildMachineQuery = async(id: string) => {
       method: "GET",
       machineID
     }
-    console.log("query is", query)
     return query
     // return { method: "", machineID: "", config: {} }
   } catch(err) {

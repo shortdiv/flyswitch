@@ -25,8 +25,6 @@ export const createMachine = async(config: any, id: string) => {
       data: conf
     })
     // write to file
-    console.log("machine is here")
-    console.log(resp.data)
     writeMachineSession(id, resp.data)
     return resp.data
   } catch(err) {
